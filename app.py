@@ -78,6 +78,20 @@ def convert_to_wav(input_path, output_path, sample_rate=16000):
     try:
         print(f"开始转换音频: {input_path} -> {output_path}")
         
+        # 检查文件类型
+        mime = magic.Magic(mime=True)
+        file_type = mime.from_file(input_path)
+        print(f"输入文件类型: {file_type}")
+        
+        if file_type.startswith('video/'):
+            # 如果是视频文件，先提取音频
+            print("检测到视频文件，先提取音频...")
+            temp_audio = os.path.join(os.path.dirname(output_path), 'temp_audio.wav')
+            video = VideoFileClip(input_path)
+            video.audio.write_audiofile(temp_audio)
+            input_path = temp_audio
+            print(f"音频提取完成: {temp_audio}")
+        
         # 读取音频文件
         data, sr = sf.read(input_path)
         print(f"原始采样率: {sr}Hz")
@@ -101,9 +115,19 @@ def convert_to_wav(input_path, output_path, sample_rate=16000):
         print("保存为WAV格式")
         sf.write(output_path, data, sample_rate)
         print("音频转换完成")
+        
+        # 清理临时文件
+        if file_type.startswith('video/') and os.path.exists(temp_audio):
+            os.remove(temp_audio)
+            print("临时音频文件已清理")
+        
         return True
     except Exception as e:
         print(f"音频转换失败: {str(e)}")
+        # 确保清理临时文件
+        if 'temp_audio' in locals() and os.path.exists(temp_audio):
+            os.remove(temp_audio)
+            print("清理临时音频文件")
         raise
 
 def transcribe_audio(file_path):
@@ -112,7 +136,19 @@ def transcribe_audio(file_path):
         print(f"开始处理音频文件: {file_path}")
         
         # 准备临时WAV文件路径
-        temp_wav_path = os.path.join(app.config['AUDIO_FOLDER'], 'temp.wav')
+        temp_wav_path = os.path.join(app.config['AUDIO_FOLDER'], 'temp_transcribe.wav')
+        
+        # 检查文件类型
+        mime = magic.Magic(mime=True)
+        file_type = mime.from_file(file_path)
+        print(f"输入文件类型: {file_type}")
+        
+        if file_type.startswith('video/'):
+            # 如果是视频文件，使用之前提取的音频文件
+            audio_file = os.path.join(app.config['AUDIO_FOLDER'], os.path.splitext(os.path.basename(file_path))[0] + '.wav')
+            if os.path.exists(audio_file):
+                print(f"使用已提取的音频文件: {audio_file}")
+                file_path = audio_file
         
         # 转换音频格式
         print("转换音频格式...")
@@ -120,8 +156,8 @@ def transcribe_audio(file_path):
         if not convert_success:
             raise Exception("音频格式转换失败")
             
-        # 使用模型进行转录（包含标点符号）
-        print("开始转录（包含标点符号）...")
+        # 使用模型进行转录
+        print("开始转录...")
         if inference_pipeline is None:
             raise Exception("语音识别模型未正确加载")
             
@@ -321,23 +357,11 @@ def download_audio(filename):
     except:
         abort(404)
 
-@app.route('/clear-transcript-cache/<filename>')
+@app.route('/clear-transcript-cache/<path:filename>')
 def clear_transcript_cache(filename):
     """清除转录缓存"""
     try:
-        # 构建转录文本文件路径
-        transcript_path = os.path.join(app.config['TRANSCRIPTS_FOLDER'], 
-                                     os.path.splitext(filename)[0] + '.txt')
-        
-        # 如果文件存在则删除
-        if os.path.exists(transcript_path):
-            os.remove(transcript_path)
-            print(f"已删除缓存文件: {transcript_path}")
-        
-        # 清除模型缓存
-        if inference_pipeline is not None:
-            inference_pipeline.clear_memory_cache()
-            
+        # 不再尝试清除模型缓存，因为 FunASR 不支持这个功能
         return jsonify({'message': '缓存已清除'})
     except Exception as e:
         print(f"清除缓存失败: {str(e)}")

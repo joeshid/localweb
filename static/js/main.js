@@ -264,9 +264,12 @@ function transcribeAudio(filename) {
                         <div class="text-content">
                             ${data.transcript || data.text || '无转录结果'}
                         </div>
-                        <button class="btn btn-outline-secondary mt-3" onclick="navigator.clipboard.writeText('${data.transcript || data.text || ''}')">
-                            复制文本
-                        </button>
+                        <div class="copy-container">
+                            <button class="btn btn-outline-secondary mt-3" onclick="copyTranscript('${data.transcript || data.text || ''}', this)">
+                                复制文本
+                            </button>
+                            <span class="copy-feedback"></span>
+                        </div>
                     </div>
                 </div>
             `;
@@ -318,6 +321,62 @@ function clearRecentFiles() {
         console.error('清空失败:', error);
         alert('清空失败: ' + error);
     });
+}
+
+// 复制转录文本
+function copyTranscript(text, button) {
+    if (!text) {
+        showCopyFeedback(button, '没有可复制的内容', 'error');
+        return;
+    }
+
+    // 创建临时textarea元素
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+
+    try {
+        // 尝试使用现代API
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(text)
+                .then(() => {
+                    showCopyFeedback(button, '已复制', 'success');
+                })
+                .catch(() => {
+                    // 如果现代API失败，回退到旧方法
+                    document.execCommand('copy');
+                    showCopyFeedback(button, '已复制', 'success');
+                });
+        } else {
+            // 使用旧方法
+            document.execCommand('copy');
+            showCopyFeedback(button, '已复制', 'success');
+        }
+    } catch (err) {
+        showCopyFeedback(button, '复制失败，请手动复制', 'error');
+    } finally {
+        // 移除临时元素
+        document.body.removeChild(textarea);
+    }
+}
+
+// 显示复制反馈
+function showCopyFeedback(button, message, type) {
+    const feedback = button.parentElement.querySelector('.copy-feedback');
+    if (feedback) {
+        feedback.textContent = message;
+        feedback.classList.remove('success', 'error');
+        feedback.classList.add(type);
+        feedback.style.opacity = '1';
+        
+        // 3秒后淡出提示
+        setTimeout(() => {
+            feedback.style.opacity = '0';
+        }, 3000);
+    }
 }
 
 // 页面加载时获取最近文件列表
