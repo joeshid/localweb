@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+*.egg-info/
+dist/
+build/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# 项目特定
+uploads/*
+!uploads/.gitkeep
+audio_output/*
+!audio_output/.gitkeep
+txt_output/*
+!txt_output/.gitkeep
+recent_files.json
+
+# 日志
+*.log
+logs/
+
+# 临时文件
+*.wav.segment_*
+temp_*
+*.tmp

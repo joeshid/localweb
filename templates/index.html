@@ -50,6 +50,94 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function updateRecentFiles() {
+            fetch('/recent')
+                .then(response => response.json())
+                .then(files => {
+                    const recentList = document.getElementById('recentFilesList');
+                    recentList.innerHTML = '';
+                    files.forEach(file => {
+                        const li = document.createElement('li');
+                        li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                        
+                        // 对文件名进行编码
+                        const encodedFilename = encodeURIComponent(file.name);
+                        
+                        // 创建文件名和操作按钮的容器
+                        const fileInfo = document.createElement('div');
+                        fileInfo.className = 'ms-2 me-auto';
+                        
+                        // 添加文件名
+                        const fileName = document.createElement('div');
+                        fileName.className = 'fw-bold';
+                        fileName.textContent = file.name;
+                        fileInfo.appendChild(fileName);
+                        
+                        // 添加文件类型信息
+                        const fileType = document.createElement('small');
+                        fileType.className = 'text-muted';
+                        fileType.textContent = file.type;
+                        fileInfo.appendChild(fileType);
+                        
+                        li.appendChild(fileInfo);
+                        
+                        // 添加操作按钮组
+                        const btnGroup = document.createElement('div');
+                        btnGroup.className = 'btn-group';
+                        
+                        // 预览按钮
+                        if (file.type.startsWith('audio/') || file.type.startsWith('video/')) {
+                            const previewBtn = document.createElement('button');
+                            previewBtn.className = 'btn btn-sm btn-outline-primary';
+                            previewBtn.innerHTML = '<i class="bi bi-play-circle"></i>';
+                            previewBtn.title = '预览';
+                            previewBtn.onclick = () => {
+                                const previewUrl = `/preview/${encodedFilename}`;
+                                const player = document.getElementById('media-player');
+                                player.src = previewUrl;
+                                player.style.display = 'block';
+                            };
+                            btnGroup.appendChild(previewBtn);
+                        }
+                        
+                        // 转录按钮
+                        const transcribeBtn = document.createElement('button');
+                        transcribeBtn.className = 'btn btn-sm btn-outline-success';
+                        transcribeBtn.innerHTML = '<i class="bi bi-translate"></i>';
+                        transcribeBtn.title = '转录';
+                        transcribeBtn.onclick = () => transcribeFile(encodedFilename);
+                        btnGroup.appendChild(transcribeBtn);
+                        
+                        // 下载音频按钮（仅对视频文件显示）
+                        if (file.type.startsWith('video/')) {
+                            const downloadAudioBtn = document.createElement('button');
+                            downloadAudioBtn.className = 'btn btn-sm btn-outline-info';
+                            downloadAudioBtn.innerHTML = '<i class="bi bi-file-earmark-music"></i>';
+                            downloadAudioBtn.title = '提取音频';
+                            downloadAudioBtn.onclick = () => extractAudio(encodedFilename);
+                            btnGroup.appendChild(downloadAudioBtn);
+                        }
+                        
+                        // 删除按钮
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.className = 'btn btn-sm btn-outline-danger';
+                        deleteBtn.innerHTML = '<i class="bi bi-trash"></i>';
+                        deleteBtn.title = '删除';
+                        deleteBtn.onclick = () => {
+                            if (confirm('确定要删除这个文件吗？')) {
+                                clearTranscriptCache(encodedFilename);
+                            }
+                        };
+                        btnGroup.appendChild(deleteBtn);
+                        
+                        li.appendChild(btnGroup);
+                        recentList.appendChild(li);
+                    });
+                })
+                .catch(error => console.error('获取最近文件列表失败:', error));
+        }
+    </script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>

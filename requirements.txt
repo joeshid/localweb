@@ -1,14 +1,10 @@
-Flask==2.0.1
-Werkzeug==2.0.1
-python-magic==0.4.27
-moviepy==1.0.3
-soundfile==0.12.1
+flask>=2.0.1
+werkzeug>=2.0.1
+numpy>=1.21.0
+soundfile>=0.10.3
+python-magic>=0.4.24
+moviepy>=1.0.3
 torch>=2.0.0
-torchaudio>=2.0.0
-modelscope>=1.9.5
-numpy>=1.20.0
-addict>=2.4.0
-datasets>=3.2.0
-simplejson>=3.19.2
-sortedcontainers>=2.4.0
-ffmpeg-python==0.2.0
+funasr>=0.8.0
+python-magic-bin>=0.4.14; platform_system == "Darwin"  # macOS 需要
+ffmpeg-python>=0.2.0

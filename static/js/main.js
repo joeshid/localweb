@@ -21,6 +21,12 @@ function uploadFile(event) {
     const file = event.target.files[0];
     if (!file) return;
 
+    // 显示上传中状态
+    document.getElementById('uploadInfo').innerHTML = `
+        <div class="alert alert-info">
+            正在上传 ${file.name}...
+        </div>`;
+
     const formData = new FormData();
     formData.append('file', file);
 
